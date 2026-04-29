@@ -205,8 +205,10 @@ begin
         severity failure;
 
       -- launch a new core operation when idle and input FIFO is non-empty,
-      -- and output FIFO is not full (considering a possible pop this cycle)
-      do_in_pop := (core_busy = '0') and (core_done = '0') and (count > 0) and (out_cnt_next < OUT_DEPTH);
+      -- and output FIFO is not full (considering a possible pop this cycle).
+      -- `core_start='0'` prevents a second dequeue while a previously issued
+      -- start pulse is still pending acceptance by the core.
+      do_in_pop := (core_busy = '0') and (core_done = '0') and (core_start = '0') and (count > 0) and (out_cnt_next < OUT_DEPTH);
 
       rd_next := rd_ptr;
       wr_next := wr_ptr;
