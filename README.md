@@ -1,5 +1,8 @@
 # fp32mul
 
+[![Build](https://github.com/crystarm/fp32mul/actions/workflows/build.yml/badge.svg)](https://github.com/crystarm/fp32mul/actions/workflows/build.yml)
+[![Testbench](https://github.com/crystarm/fp32mul/actions/workflows/test.yml/badge.svg)](https://github.com/crystarm/fp32mul/actions/workflows/test.yml)
+
 A VHDL-2008 implementation of an IEEE-754 binary32 multiplier as a **Moore FSM + registered datapath**.
 
 ## What’s included

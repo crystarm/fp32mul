@@ -1,0 +1,31 @@
+name: Testbench
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  testbench:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GHDL
+        run: sudo apt-get update && sudo apt-get install -y ghdl
+
+      - name: Run stream testbench (COMB + ITER)
+        run: make run_all
+
+      - name: Upload wave artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: waveforms
+          path: |
+            wave.vcd
+            wave_comb.vcd
+            wave_iter.vcd
+          if-no-files-found: ignore

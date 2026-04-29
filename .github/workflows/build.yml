@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install GHDL
+        run: sudo apt-get update && sudo apt-get install -y ghdl
+
+      - name: Analyze and elaborate
+        run: |
+          make analyze
+          make elab
