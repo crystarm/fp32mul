@@ -3,7 +3,6 @@ STD  ?= 08
 
 TOP_TB := tb_fp32mul_stream
 
-# Compile order matters (packages first)
 SRC := \
 	src/fp32mul_cfg_pkg.vhd \
 	src/fp32mul_moore.vhd \

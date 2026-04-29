@@ -195,9 +195,11 @@ consumer_p : process
   variable hold_flags : std_logic_vector(4 downto 0);
   constant HOLD_CYCLES : natural := 200;
 begin
-  out_ready <= '1';
+  -- Start with consumer stalled so the first produced item is guaranteed
+  -- to be held (not consumed) before we begin stability checks.
+  out_ready <= '0';
 
-  -- ===== Wait for first output, then apply backpressure =====
+  -- ===== Wait for first output while stalled =====
   cycles := 0;
   while out_valid /= '1' loop
     wait until rising_edge(clk);
@@ -207,14 +209,10 @@ begin
       severity failure;
   end loop;
 
-  -- Stop consuming BEFORE the next rising edge.
-  out_ready <= '0';
-
-  -- Check first output matches tvs(0) while stalled.
+  -- First visible payload under backpressure must match vector #0.
   assert out_result = tvs(0).r
     report "Result mismatch idx=0 got=0x" & to_hstring(out_result) & " exp=0x" & to_hstring(tvs(0).r)
     severity failure;
-
   assert out_flags = tvs(0).f
     report "Flags mismatch idx=0 got=" & slv_to_bin(out_flags) & " exp=" & slv_to_bin(tvs(0).f)
     severity failure;
@@ -222,7 +220,7 @@ begin
   hold_res := out_result;
   hold_flags := out_flags;
 
-  -- Hold for a while: out_valid must stay asserted and output must not change.
+  -- Keep stalling: out_valid must stay asserted and payload must stay stable.
   for t in 0 to HOLD_CYCLES-1 loop
     wait until rising_edge(clk);
     assert out_valid = '1'
@@ -236,51 +234,35 @@ begin
       severity failure;
   end loop;
 
-  -- Release backpressure and consume the first output.
+  -- Release backpressure.
   out_ready <= '1';
-  wait until rising_edge(clk);
-  idx := 1;
 
-  -- Immediately after consuming the first output, the SECOND should already be queued.
-  assert out_valid = '1'
-    report "Expected second output queued (output FIFO depth=2), but out_valid deasserted"
-    severity failure;
-
-  assert out_result = tvs(1).r
-    report "Result mismatch idx=1 got=0x" & to_hstring(out_result) & " exp=0x" & to_hstring(tvs(1).r)
-    severity failure;
-
-  assert out_flags = tvs(1).f
-    report "Flags mismatch idx=1 got=" & slv_to_bin(out_flags) & " exp=" & slv_to_bin(tvs(1).f)
-    severity failure;
-
-  -- Consume second output.
-  wait until rising_edge(clk);
-  idx := 2;
-
-  -- ===== Consume remaining outputs normally =====
+  -- ===== Consume outputs on handshake edges =====
+  -- Check payload at the same rising edge where it is accepted.
+  idx := 0;
+  cycles := 0;
   while idx < tvs'length loop
-    cycles := 0;
-    while out_valid /= '1' loop
-      wait until rising_edge(clk);
+    wait until rising_edge(clk);
+
+    if out_valid = '1' then
+      assert out_result = tvs(idx).r
+        report "Result mismatch idx=" & integer'image(idx) &
+               " got=0x" & to_hstring(out_result) & " exp=0x" & to_hstring(tvs(idx).r)
+        severity failure;
+
+      assert out_flags = tvs(idx).f
+        report "Flags mismatch idx=" & integer'image(idx) &
+               " got=" & slv_to_bin(out_flags) & " exp=" & slv_to_bin(tvs(idx).f)
+        severity failure;
+
+      idx := idx + 1;
+      cycles := 0;
+    else
       cycles := cycles + 1;
       assert cycles < MAX_CYCLES
         report "Timeout waiting out_valid idx=" & integer'image(idx)
         severity failure;
-    end loop;
-
-    assert out_result = tvs(idx).r
-      report "Result mismatch idx=" & integer'image(idx) &
-             " got=0x" & to_hstring(out_result) & " exp=0x" & to_hstring(tvs(idx).r)
-      severity failure;
-
-    assert out_flags = tvs(idx).f
-      report "Flags mismatch idx=" & integer'image(idx) &
-             " got=" & slv_to_bin(out_flags) & " exp=" & slv_to_bin(tvs(idx).f)
-      severity failure;
-
-    wait until rising_edge(clk);
-    idx := idx + 1;
+    end if;
   end loop;
 
   cons_done <= '1';

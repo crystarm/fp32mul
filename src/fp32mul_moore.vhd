@@ -337,14 +337,14 @@ round_inc_u <= (0 => round_inc, others => '0');
 
           -- Inf handling
           elsif (cls_a_eff = CLS_INF) or (cls_b_eff = CLS_INF) then
-            res_reg(31) <= sign_res;
+            res_reg(31) <= sign_a xor sign_b;
             res_reg(30 downto 23) <= (others => '1');
             res_reg(22 downto 0) <= (others => '0');
             state <= ST_DONE;
 
           -- zero handling
           elsif (cls_a_eff = CLS_ZERO) or (cls_b_eff = CLS_ZERO) then
-            res_reg(31) <= sign_res;
+            res_reg(31) <= sign_a xor sign_b;
             res_reg(30 downto 23) <= (others => '0');
             res_reg(22 downto 0) <= (others => '0');
             state <= ST_DONE;
