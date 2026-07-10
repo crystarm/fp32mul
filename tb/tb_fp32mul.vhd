@@ -2,6 +2,9 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library std;
+use std.env.all;
+
 use work.fp32mul_cfg_pkg.all;
 
 entity tb_fp32mul is
@@ -337,10 +340,10 @@ begin
     );
 
   stim : process
-    constant tv_ftz : tv_arr_t := (
+    constant tv_ftz : tv_arr_t(0 to 0) := (
       -- exact subnormal in FULL becomes flushed to zero in FTZ.
       -- (min normal) * 0.5 = 2^-127 should be non-zero subnormal, but FTZ forces zero.
-      (x"00800000", x"3F000000", x"00000000", mkflags('0','0','0','1','1'))
+      0 => (x"00800000", x"3F000000", x"00000000", mkflags('0','0','0','1','1'))
     );
 
     constant tv_daz : tv_arr_t := (
@@ -425,6 +428,7 @@ begin
     run_rounding_suite(tv_tie_pos, tv_tie_neg);
 
     report "ALL TESTS PASSED" severity note;
+    stop(0);
     wait;
   end process;
 

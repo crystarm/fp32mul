@@ -11,6 +11,7 @@ A VHDL-2008 implementation of an IEEE-754 binary32 multiplier as a **Moore FSM +
 - `src/fp32mul_stream.vhd` — **streaming wrapper** (`in_valid/in_ready`, `out_valid/out_ready`) + backpressure + request queue (2 entries) + output FIFO (2 entries)
 - `src/fp32mul_cfg_pkg.vhd` — constants for modes (generic parameter codes)
 - `tb/tb_fp32mul_stream.vhd` — a **pure VHDL** testbench for the streaming interface (directed vectors + backpressure (verifies that up to 2 results can accumulate in the output FIFO))
+- `tb/tb_fp32mul.vhd` — a **pure VHDL** testbench for the legacy core interface and mode coverage (rounding + FTZ/DAZ)
 - `Makefile` — build/run via **GHDL**
 
 ## Interface (recommended): fp32mul_stream
@@ -98,13 +99,25 @@ This will:
 - run it
 - generate `wave.vcd`
 
-Run two multiplier variants (COMB/ITER):
+Run the streaming testbench for two multiplier variants (COMB/ITER):
 
 ```bash
 make run_all
 ```
 
-Or select manually:
+Run the legacy/core testbench:
+
+```bash
+make run_core
+```
+
+Run the full CI-style test set:
+
+```bash
+make run_all_tests
+```
+
+Or select the streaming multiplier implementation manually:
 
 ```bash
 make TB_MUL_IMPL=0   # COMB
@@ -120,7 +133,7 @@ gtkwave wave.vcd
 
 ## About the tests
 
-The testbench (`tb_fp32mul_stream`) checks:
+The streaming testbench (`tb_fp32mul_stream`) checks:
 - basic exact multiplications
 - signed zeros
 - infinities
@@ -131,3 +144,5 @@ The testbench (`tb_fp32mul_stream`) checks:
 - exact subnormal and subnormal -> normal (in FULL mode)
 - inexact rounding examples (NX)
 - `out_valid/out_ready` behavior (backpressure): when `out_ready=0` the output must remain stable
+
+The core testbench (`tb_fp32mul`) additionally checks legacy `start/done` operation, FTZ/DAZ behavior, and rounding-mode tie cases.

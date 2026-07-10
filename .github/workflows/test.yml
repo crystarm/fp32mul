@@ -16,8 +16,8 @@ jobs:
       - name: Install GHDL
         run: sudo apt-get update && sudo apt-get install -y ghdl
 
-      - name: Run stream testbench (COMB + ITER)
-        run: make run_all
+      - name: Run testbenches
+        run: make run_all_tests
 
       - name: Upload wave artifacts
         if: always()
@@ -28,4 +28,5 @@ jobs:
             wave.vcd
             wave_comb.vcd
             wave_iter.vcd
+            wave_core.vcd
           if-no-files-found: ignore
